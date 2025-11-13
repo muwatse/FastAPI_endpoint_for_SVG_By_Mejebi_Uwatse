@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+python-multipart
+pillow
+opencv-python-headless
+numpy
+
+docker run --rm -p 8000:8000 --name face-svg-api fastapi_endpoint:local
