@@ -1,0 +1,23 @@
+version: "3.8"
+
+services:
+  app:
+    build: .
+    container_name: face-svg-api
+    ports:
+      - "8000:8000"
+    # If your Dockerfile already runs uvicorn, no command needed.
+    # If not, you can explicitly set:
+    # command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+  prometheus:
+    image: prom/prometheus:v2.55.0
+    container_name: prometheus
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    ports:
+      - "9090:9090"
+    depends_on:
+      - app
