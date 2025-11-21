@@ -33,6 +33,16 @@ JOBS_COMPLETED = Counter(
     "Total number of completed frontal crop jobs by status",
     ["status"],  # done, error
 )
+# Cache hit/miss tracking
+CACHE_HITS = Counter(
+    "frontal_crop_cache_hits_total",
+    "Total number of cache hits",
+)
+
+CACHE_MISSES = Counter(
+    "frontal_crop_cache_misses_total",
+    "Total number of cache misses",
+)
 
 
 @router.get("/metrics")

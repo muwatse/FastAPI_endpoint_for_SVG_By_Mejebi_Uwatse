@@ -11,6 +11,7 @@ from app.logger import console
 
 from .processing import process_face_image
 from .metrics import JOB_PROCESSING_SECONDS, JOBS_COMPLETED, JOBS_IN_FLIGHT
+from .db_cache import make_cache_key, store_cached_result
 
 # In-memory job store
 JOBS: Dict[str, Dict[str, Any]] = {}
@@ -37,6 +38,11 @@ async def process_job(job_id: str, payload: Dict[str, Any], simulate_delay: bool
 
         JOBS[job_id]["status"] = "done"
         JOBS[job_id]["result"] = result
+
+        # STORE IN CACHE
+        cache_key = make_cache_key(payload)
+        store_cached_result(cache_key, result)
+        console.log(f"[green]Cached result for key {cache_key[:12]}...[/green]")
 
         # Metrics: job completed successfully
         JOBS_COMPLETED.labels(status="done").inc()

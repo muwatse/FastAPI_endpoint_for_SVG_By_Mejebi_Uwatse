@@ -6,9 +6,31 @@ services:
     container_name: face-svg-api
     ports:
       - "8000:8000"
-    # If your Dockerfile already runs uvicorn, no command needed.
-    # If not, you can explicitly set:
-    # command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=face_cache
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: face-cache-db
+    environment:
+      POSTGRES_DB: face_cache
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   prometheus:
     image: prom/prometheus:v2.55.0
@@ -21,3 +43,6 @@ services:
       - "9090:9090"
     depends_on:
       - app
+
+volumes:
+  postgres_data:

@@ -5,7 +5,8 @@ from typing import Dict
 
 from .models import CropSubmitPayload
 from .job_manager import create_job, JOBS
-from .metrics import router as metrics_router, CROP_SUBMIT_REQUESTS
+from .metrics import router as metrics_router, CROP_SUBMIT_REQUESTS, CACHE_HITS, CACHE_MISSES
+from .db_cache import make_cache_key, get_cached_result
 from app.logger import console
 
 app = FastAPI(title="Frontal Crop API", version="1.0.0")
@@ -46,11 +47,24 @@ async def submit_crop(
     if not payload_dict.get("image"):
         raise HTTPException(status_code=422, detail="image required")
 
+    # CHECK CACHE FIRST
+    cache_key = make_cache_key(payload_dict)
+    cached = get_cached_result(cache_key)
+    
+    if cached:
+        console.log(f"[green]Cache HIT for key {cache_key[:12]}...[/green]")
+        CACHE_HITS.inc()
+        return JSONResponse(status_code=200, content=cached)
+    
+    # Cache MISS - proceed with job creation
+    console.log(f"[yellow]Cache MISS for key {cache_key[:12]}...[/yellow]")
+    CACHE_MISSES.inc()
+
     # Record that a request came in
     CROP_SUBMIT_REQUESTS.labels(fast=str(fast).lower()).inc()
 
     job_id = create_job(payload_dict, simulate_delay=not fast)
-    print(f"[blue]Received job {job_id} (fast={fast})[/blue]")
+    console.log(f"[blue]Received job {job_id} (fast={fast})[/blue]")
 
     # Explicitly return 202 so the test script is happy
     return JSONResponse(status_code=202, content={"id": job_id, "status": "pending"})
